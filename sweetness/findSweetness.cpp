@@ -9,19 +9,76 @@
 ****************************************************/
 
 #include <iostream>
+#include <string.h>
 #include <cmath>
 using namespace std;
 
+/****************************
+* deleteMultiples
+*   This will delete all the
+*     multiples for the NUM.
+****************************/
+void deleteMultiples(bool primes[], int num, int range)
+{
+    // Start at 2 since everything is a multiple of 1 :)
+    int i = 2;
+    int n;
+
+    while ((n = i * num) <= range)
+    {
+        primes[n - 1] = 1; // You are not prime!
+        ++i;
+    }
+
+    return;
+}
+
 /**************************************
-* testForPrimality
+* seiveEratosthenes
 *   This function will be using the
 *     Sieve of Eratosthenes to find
-*     if the number you have is a Prime
-*     number.
+*     all the possible prime numbers in
+*     the range.
 **************************************/
-bool testForPrimality(int num)
+void seiveEratosthenes(int range)
 {
+    // Make sure the range is greater than or equal to 2.
+    // 2 is the only smallest prime number.
+    if (range >= 2)
+    {
+        // Create an array that will hold all the primes in the range.
+        // And initalize everything to zero.
+        bool primes[range];
+        memset(primes, 0, sizeof(primes));
 
+        // Now loop through the range of numbers and change
+        // all the numbers to 1 that are not prime!
+        for (int i = 1; i < range; ++i)
+        {
+            if (primes[i] == 0)
+            {
+                cout << "Number: " << i + 1 << endl;
+                // Now delete all the multiples of i + 1
+                deleteMultiples(primes, i + 1, range);
+            }
+
+        }
+        for (int i = 0; i < range; ++i)
+        {
+            if (primes[i] == 1)
+            {
+                cout << "\033[1;31m" << i + 1 << "\033[0m";
+            }
+            else
+            {
+                cout << i + 1;
+            }
+            cout << " ";
+        }
+        cout << endl << endl;
+    }
+
+    return;
 }
 
 /*******************************************************
@@ -47,8 +104,8 @@ void testEulersPolynomial(int min, int max, int c)
 * main
 *   Driver function.
 *************************/
-int int main(int argc, char const *argv[])
+int main(int argc, char const *argv[])
 {
-
+    seiveEratosthenes(110);
     return 0;
 }
