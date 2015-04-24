@@ -11,6 +11,8 @@
 #include <iostream>
 #include <string.h>
 #include <cmath>
+#include <limits>
+#include <cassert>
 using namespace std;
 
 /****************************
@@ -20,14 +22,26 @@ using namespace std;
 ****************************/
 void deleteMultiples(bool primes[], int num, int range)
 {
+    assert(num <= range);
+
     // Start at 2 since everything is a multiple of 1 :)
     int i = 2;
+    bool done = false;
     int n;
 
-    while ((n = i * num) <= range)
+    while (!done)
     {
-        primes[n - 1] = 1; // You are not prime!
-        ++i;
+        n = i * num;
+
+        if (n <= range)
+        {
+            assert(primes[n-1] == 0 || primes[n-1] == 1);
+
+            primes[n - 1] = 1; // You are not prime!
+            ++i;
+        }
+        else
+            done = true;
     }
 
     return;
@@ -48,7 +62,7 @@ void seiveEratosthenes(int range)
     {
         // Create an array that will hold all the primes in the range.
         // And initalize everything to zero.
-        bool primes[range];
+        bool * primes = new bool[range];
         memset(primes, 0, sizeof(primes));
 
         // Now loop through the range of numbers and change
@@ -57,12 +71,14 @@ void seiveEratosthenes(int range)
         {
             if (primes[i] == 0)
             {
-                cout << "Number: " << i + 1 << endl;
                 // Now delete all the multiples of i + 1
                 deleteMultiples(primes, i + 1, range);
             }
-
         }
+
+        delete primes;
+        // For output purposes
+#ifdef DEBUG
         for (int i = 0; i < range; ++i)
         {
             if (primes[i] == 1)
@@ -76,6 +92,7 @@ void seiveEratosthenes(int range)
             cout << " ";
         }
         cout << endl << endl;
+#endif
     }
 
     return;
@@ -106,6 +123,7 @@ void testEulersPolynomial(int min, int max, int c)
 *************************/
 int main(int argc, char const *argv[])
 {
-    seiveEratosthenes(110);
+    int range = numeric_limits<int>::max();
+    seiveEratosthenes(range - 1);
     return 0;
 }
