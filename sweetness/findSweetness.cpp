@@ -13,6 +13,8 @@
 #include <cmath>
 #include <limits>
 #include <cassert>
+#include <string>
+#include <stdlib.h>
 using namespace std;
 
 // For debugging purposes.
@@ -23,6 +25,8 @@ using namespace std;
 #define Debug(x)
 #endif
 
+bool * primes; // Global variable, don't do this normally.
+
 /**************************************
 * seiveEratosthenes
 *   This function will be using the
@@ -30,24 +34,23 @@ using namespace std;
 *     all the possible prime numbers in
 *     the range.
 **************************************/
-void seiveEratosthenes(const int range)
+void seiveEratosthenes(const int min, const int max)
 {
     // Make sure the range is greater than or equal to 2.
     // 2 is the only smallest prime number.
-    if (range >= 2)
+    if (max >= 2)
     {
         // Create an array that will hold all the primes in the range
         // and initalize everything to zero.
-        bool * primes = new bool[range];
         memset(primes, 0, sizeof(primes));
 
         // Now loop through the range of numbers and change
         // all the numbers to 1 that are not prime!
-        for (int i = 2; i < range; ++i)
+        for (int i = 2; i <= max; ++i)
         {
             if (primes[i] == 0)
             {
-                for (int j = i; (j * i) < range && (j * i) > 0; ++j)
+                for (int j = i; (j * i) <= max && (j * i) > 0; ++j)
                 {
                     primes[i * j] = 1; // You are not a prime!
                 }
@@ -56,7 +59,7 @@ void seiveEratosthenes(const int range)
 
         // For output purposes
 #ifdef DEBUG
-        for (int i = 2; i <= range; ++i)
+        for (int i = min; i <= max; ++i)
         {
             if (primes[i] == 1)
             {
@@ -70,10 +73,7 @@ void seiveEratosthenes(const int range)
         }
         cout << endl << endl;
 #endif
-
-        delete [] primes;
     }
-
 
     return;
 }
@@ -98,12 +98,78 @@ void testEulersPolynomial(int min, int max, int c)
 }
 
 /*************************
+* readCommandLine
+*   This will read the arguments
+*       given by the user.
+*************************/
+void readCommandLine(int & min, int & max, int & c, int argc, const char **argv)
+{
+    bool showHelp = false;
+
+    for (int i = 1; i < argc && !showHelp; ++i)
+    {
+        if (argv[i] == string("-h") || argv[i] == string("--help"))
+        {
+            cout << "\nCommand line arguments for a.out:\n\n"
+                 << "     a.out [options] [value]\n\n"
+                 << "     Options:\n"
+                 << "\t-mn, --min\tMinimum range. Default 0.\n"
+                 << "\t-mx, --max\tMaximum range. REQUIRED.\n"
+                 << "\t-c\t\tValue for C.\n\n";
+
+            showHelp = true;
+        }
+        else if (argv[i] == string("-mn") || argv[i] == string("--min"))
+        {
+            min = atoi(argv[i + 1]);
+        }
+        else if (argv[i] == string("-mx") || argv[i] == string("--max"))
+        {
+            max = atoi(argv[i + 1]);
+        }
+        else if (argv[i] == string("-c"))
+        {
+            c = atoi(argv[i + 1]);
+        }
+        else
+        {
+            if (!isdigit(argv[i][0]))
+            {
+                cout << "\nOption: " << argv[i] << " is not a valid option.\nType -h for help.\n\n";
+                showHelp = true;
+            }
+        }
+    }
+
+    if (max == 0 && !showHelp)
+    {
+        cout << "\nThere was an error in your command line.\nType -h for help.\n\n";
+    }
+
+    return;
+}
+
+/*************************
 * main
 *   Driver function.
 *************************/
-int main(int argc, char const *argv[])
+int main(int argc, const char *argv[])
 {
-    int range = numeric_limits<int>::max();
-    seiveEratosthenes(range - 1);
+    // Grab the command line arguments!
+    int max = 0;
+    int min = 0;
+    int c   = 0;
+
+    readCommandLine(min, max, c, argc, argv);
+
+    // Allocate the memore for primes!
+    primes = new bool[max];
+
+    // Now grab the primes within that range!
+    seiveEratosthenes(min, max);
+
+    // Now delete the allocation
+    delete [] primes;
+
     return 0;
 }
