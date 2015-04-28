@@ -15,37 +15,13 @@
 #include <cassert>
 using namespace std;
 
-/****************************
-* deleteMultiples
-*   This will delete all the
-*     multiples for the NUM.
-****************************/
-void deleteMultiples(bool primes[], int num, int range)
-{
-    assert(num <= range);
-
-    // Start at 2 since everything is a multiple of 1 :)
-    int i = 2;
-    bool done = false;
-    int n;
-
-    while (!done)
-    {
-        n = i * num;
-
-        if (n <= range)
-        {
-            assert(primes[n-1] == 0 || primes[n-1] == 1);
-
-            primes[n - 1] = 1; // You are not prime!
-            ++i;
-        }
-        else
-            done = true;
-    }
-
-    return;
-}
+// For debugging purposes.
+// To output debug type in command line: g++ -DDEBUG <file>
+#ifdef DEBUG
+#define Debug(x) x
+#else
+#define Debug(x)
+#endif
 
 /**************************************
 * seiveEratosthenes
@@ -54,46 +30,50 @@ void deleteMultiples(bool primes[], int num, int range)
 *     all the possible prime numbers in
 *     the range.
 **************************************/
-void seiveEratosthenes(int range)
+void seiveEratosthenes(const int range)
 {
     // Make sure the range is greater than or equal to 2.
     // 2 is the only smallest prime number.
     if (range >= 2)
     {
-        // Create an array that will hold all the primes in the range.
-        // And initalize everything to zero.
+        // Create an array that will hold all the primes in the range
+        // and initalize everything to zero.
         bool * primes = new bool[range];
         memset(primes, 0, sizeof(primes));
 
         // Now loop through the range of numbers and change
         // all the numbers to 1 that are not prime!
-        for (int i = 1; i < range; ++i)
+        for (int i = 2; i < range; ++i)
         {
             if (primes[i] == 0)
             {
-                // Now delete all the multiples of i + 1
-                deleteMultiples(primes, i + 1, range);
+                for (int j = i; (j * i) < range && (j * i) > 0; ++j)
+                {
+                    primes[i * j] = 1; // You are not a prime!
+                }
             }
         }
 
-        delete primes;
         // For output purposes
 #ifdef DEBUG
-        for (int i = 0; i < range; ++i)
+        for (int i = 2; i <= range; ++i)
         {
             if (primes[i] == 1)
             {
-                cout << "\033[1;31m" << i + 1 << "\033[0m";
+                cout << "\033[1;31m" << i << "\033[0m";
             }
             else
             {
-                cout << i + 1;
+                cout << i;
             }
             cout << " ";
         }
         cout << endl << endl;
 #endif
+
+        delete [] primes;
     }
+
 
     return;
 }
