@@ -121,8 +121,11 @@ void readCommandLine(map<string, int> & args) throw (string)
         message = "\nERROR: your maximum x is too big.\nType a.out -h for help.\n\n";
     }
     else if (((max * max) + max + c) < 0 ||
-            ((abs(min) * abs(min)) + abs(min) + c) < 0)
+            ((min * min) + min + c) < 0)
     {
+        cout << ((max * max) + max + c) << endl
+             << ((min * min) + min + c) << endl;
+
         int maxC = 0;
 
         if (max > abs(min))
@@ -278,10 +281,11 @@ void grabSize(map<string, int> & args)
         return;
     }
 
-    if (abs(args["min"]) > args["max"])
+    if (abs(args["min"]) > abs(args["max"]))
     {
-        int min = abs(args["min"]);
-        sizeOfPrimes = (min * min) * min + args["c"];
+        int min = args["min"];
+        int c = args["c"];
+        sizeOfPrimes = (min * min) + min + c;
     }
     else
     {
@@ -295,9 +299,15 @@ void grabSize(map<string, int> & args)
 * findMaxC
 *   This will find the max C.
 ************************/
-int findMaxC(int x)
+int findMaxC(int max, int min)
 {
     int maxC = 0;
+    int x = 0;
+
+    if (max > min)
+        x = max;
+    else
+        x = min;
 
     maxC = maxInt - (x * x) + x;
 
@@ -323,7 +333,7 @@ void findBestXAndC()
     bestProb.push_back(0.0); // bestProb[3] == probability.
     int minX = -46341;
     int maxX = -36341;
-    int maxC = findMaxC(abs(minX));
+    int maxC = findMaxC(abs(maxX), abs(minX));
 
 #ifdef DEBUG
     cout << "maxC = " << maxC << endl;
@@ -332,37 +342,51 @@ void findBestXAndC()
     float count;
     float totalPoss = 10000;
 
-    // For loop for c
-    for (int c = 1; c <= maxC; ++c)
+    // One more while loop to go through all the ranges!
+    while (minX <= 1)
     {
-        count = 0;
-
-        // Now to run through all of x!
-        for (int i = minX; i <= maxX; ++i)
+        // For loop for c
+        for (int c = 1; c <= maxC; ++c)
         {
-            // Now use Euler's Polynomial!
-            //  num =     x^2 + x + C
-            int num = abs((i * i) + i + c);
+            count = 0;
 
-            // Now test for it's primality!
-            if (primesArray[num] == 0)
+            // Now to run through all of x!
+            for (int i = minX; i <= maxX; ++i)
             {
-                count++;
+                // Now use Euler's Polynomial!
+                //  num =     x^2 + x + C
+                int num = abs((i * i) + i + c);
+
+                // Now test for it's primality!
+                if (primesArray[num] == 0)
+                {
+                    count++;
+                }
+            }
+
+            float prob = (count / 10000) * 100;
+
+            // Now check the vector!
+            if (prob > bestProb[3])
+            {
+                // Insert the best x and c!
+                bestProb[0] = minX;
+                bestProb[1] = maxX;
+                bestProb[2] = c;
+                bestProb[3] = prob;
             }
         }
 
-        float prob = (count / 10000) * 100;
-
-        // Now check the vector!
-        if (bestProb.isEmpty() || prob > bestProb[3])
-        {
-            // Insert the best x and c!
-            bestProb[0] = minX;
-            bestProb[1] = maxX;
-            bestProb[2] = c;
-            bestProb[3] = prob;
-        }
+        // Now increment the range and get max c!
+        maxC = findMaxC(abs(++maxX), abs(++minX));
     }
+
+    cout << "\n**************************************\n"
+         << "************Best Probability**********\n"
+         << "**************************************\n\n"
+         << "With given variables: " << bestProb[0] << " <= x <= " << bestProb[1]
+         << " and C = " << bestProb[2] << endl
+         << "Your probability of getting a prime is " << bestProb[3] << "%\n\n";
 
     return;
 }
@@ -378,16 +402,16 @@ int main(int argc, const char *argv[])
     args["help"] = 0;
     args["min"]  = 0;
     args["max"]  = 0;
-    args["find"] = 1;
+    args["find"] = 0;
     args["c"]    = 0;
 
     try
     {
         // Parse arguments
-        // parseCommandLine(args, argc, argv);
+        parseCommandLine(args, argc, argv);
 
-        // // Grab the command line arguments!
-        // readCommandLine(args);
+        // Grab the command line arguments!
+        readCommandLine(args);
 
         // Grab the right size!
         grabSize(args);
@@ -399,10 +423,10 @@ int main(int argc, const char *argv[])
         seiveEratosthenes();
 
         // Now test Euler's Polynomial
-        // if (args["find"] == 1)
-            findBestXAndC();
-        // else
-        //     testEulersPolynomial(args);
+        if (args["find"] == 1)
+           findBestXAndC();
+        else
+            testEulersPolynomial(args);
 
         // Delete the array
         delete [] primesArray;
