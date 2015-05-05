@@ -8,6 +8,7 @@
 *       plynomial.
 ****************************************************/
 
+#include <vector>
 #include <iostream>
 #include <string.h>
 #include <cmath>
@@ -16,6 +17,8 @@
 #include <string>
 #include <stdlib.h>
 #include <string>
+#include <map>
+#include <sstream>
 using namespace std;
 
 // For debugging purposes.
@@ -28,89 +31,141 @@ using namespace std;
 
 bool * primesArray; // Global variable, don't do this normally.
 int sizeOfPrimes;
+int maxInt = numeric_limits<int>::max() - 1;
 
-/*************************
-* readCommandLine
-*   This will read the arguments
-*       given by the user.
-*************************/
-void readCommandLine(int & min, int & max, int & c, int argc, const char **argv) throw (string)
+/******************************
+* displayLearnedAndDirections
+*   Display the learned page and
+*       directions.
+******************************/
+void displayLearnedAndDirections() throw (string)
 {
-    string message;
+    string message = "How to use this program type: 'a.out --help'\n\n";
+
+    throw(message);
+    return;
+}
+
+/******************************
+* parseCommandLine
+*   This will parse the command
+*       line.
+******************************/
+void parseCommandLine(map<string, int> & args, int argc, const char **argv) throw (string)
+{
+    Debug("Parsing command line\n");
 
     for (int i = 1; i < argc; ++i)
     {
         if (argv[i] == string("-h") || argv[i] == string("--help"))
         {
-            message = "\nCommand line arguments for a.out:\n\n";
-
-            message = message + "     a.out [options] [value]\n\n" +
-                  "     Options:\n" +
-                  "\t-mn, --min\t Minimum range of x. REQUIRED. MINIMUM x is -46340.\n" +
-                  "\t-mx, --max\t Maximum range of x. REQUIRED. MAXIMUM x is 46340.\n" +
-                  "\t-c\t\t Value for C. REQUIRED. MIN and MAX of c is 0 to 10,000.\n" +
-                  "\t-l,  --learned\t What was learned in this exploration.\n" +
-                  "\t-f   --find\t This will find the best c between 0 to 10,000 with x being -46340 < x < 46340.\n\n";
-
-            throw(message);
+            args["help"] = 1;
         }
         else if (argv[i] == string("-mn") || argv[i] == string("--min"))
         {
-            min = atoi(argv[i + 1]);
+            int min = atoi(argv[i + 1]);
 
-            if (min < -46340)
-            {
-                message = "\nERROR: your minimum x: ";
-                message = message + argv[i + 1] + " is too small.\nType a.out -h for help.\n\n";
-                throw(message);
-            }
-            else
-            {
-                i++;
-            }
+            args["min"] = min;
+
+            i++;
         }
         else if (argv[i] == string("-mx") || argv[i] == string("--max"))
         {
-            max = atoi(argv[i + 1]);
+            int max = atoi(argv[i + 1]);
 
-            if (max > 46340)
-            {
-                message = "\nERROR: your maximum x: ";
-                message = message + argv[i + 1] + " is too big.\nType a.out -h for help.\n\n";
-                throw(message);
-            }
-            else
-            {
-                i++;
-            }
+            args["max"] = max;
+
+            i++;
         }
         else if (argv[i] == string("-c"))
         {
-            c = atoi(argv[i + 1]);
+            int c = atoi(argv[i + 1]);
 
-            if (c > 10000 || c < 0)
-            {
-                message = "\nERROR: your value c: ";
-                message = message + argv[i + 1] + " is invalid.\nType a.out -h for help.\n\n";
-                throw(message);
-            }
-            else
-            {
-                i++;
-            }
+            args["c"] = c;
+
+            i++;
+        }
+        else if (argv[i]== string("-f") || argv[i] == string("--find"))
+        {
+            args["find"] = 1;
         }
         else
         {
-            message = "\nOption: ";
+            string message = "\nOption: ";
             message = message + argv[i] + " is not a valid option.\nType a.out -h for help.\n\n";
             throw(message);
         }
     }
 
-    if (max == 0 || min == 0 || c == 0)
+    return;
+}
+
+/*******************************
+* readCommandLine
+*   This will read the arguments
+*       given by the user.
+*******************************/
+void readCommandLine(map<string, int> & args) throw (string)
+{
+    string message = "";
+    int max = args["max"];
+    int min = args["min"];
+    int c   = args["c"];
+
+    if (args["min"] < -46341)
     {
-        message = "\nERROR: your command agruments is missing some values.\nType a.out -h for help\n\n";
+        message = "\nERROR: your minimum x is too small.\nType a.out -h for help.\n\n";
+    }
+    else if (args["max"] > 46341)
+    {
+        message = "\nERROR: your maximum x is too big.\nType a.out -h for help.\n\n";
+    }
+    else if (((max * max) + max + c) < 0 ||
+            ((abs(min) * abs(min)) + abs(min) + c) < 0)
+    {
+        int maxC = 0;
+
+        if (max > abs(min))
+        {
+            maxC = maxInt - (max * max) + max;
+        }
+        else
+        {
+            maxC = maxInt - (abs(min) * abs(min)) + abs(min);
+        }
+
+        // Convert int to string.
+        ostringstream convert;
+        convert << maxC;
+
+        message = "\nERROR: your value c is too big compared to your x range.\n";
+        message = message + "\tWith given range c must be less than this: " + convert.str() +
+                  "\nType a.out -h for help.\n\n";
+    }
+
+    // No matter what you should show this if defined.
+    if (args["help"] == 1)
+    {
+        message = "\nCommand line arguments for a.out:\n\n";
+
+        message = message + "     a.out [options] [value]\n\n" +
+              "     Options:\n" +
+              "\t-mn, --min\t Minimum range of x. MINIMUM x is -46341.\n" +
+              "\t-mx, --max\t Maximum range of x. MAXIMUM x is 46341.\n" +
+              "\t-c\t\t Value for C. Maximum c is computed by given x.\n" +
+              "\t-f   --find\t This will find the best x and c value.\n\n";
+    }
+
+    // Throw the message if there is one.
+    if (message != string(""))
+    {
         throw(message);
+    }
+
+    // Check these to see which functions to do.
+    if (max == 0 && min == 0 && c == 0 && args["find"] != 1)
+    {
+        displayLearnedAndDirections();
     }
 
     return;
@@ -170,12 +225,15 @@ void seiveEratosthenes()
 *     test that range using Euler's Polynomial function
 *     and then check it's primality.
 *******************************************************/
-void testEulersPolynomial(const int min, const int max, const int c)
+void testEulersPolynomial(map<string, int> & args)
 {
     cout << "\nComputing probability with given range and c...\n";
 
     float count = 0;
     float totalPoss = 0;
+    int min = args["min"];
+    int max = args["max"];
+    int c   = args["c"];
 
     if (min >= 0)
         totalPoss = max - min;
@@ -208,29 +266,143 @@ void testEulersPolynomial(const int min, const int max, const int c)
 }
 
 /*************************
+* grabSize
+*   Get the right size!
+*************************/
+void grabSize(map<string, int> & args)
+{
+    // Check to see if we need the max int.
+    if (args["find"] == 1)
+    {
+        sizeOfPrimes = maxInt;
+        return;
+    }
+
+    if (abs(args["min"]) > args["max"])
+    {
+        int min = abs(args["min"]);
+        sizeOfPrimes = (min * min) * min + args["c"];
+    }
+    else
+    {
+        sizeOfPrimes = (args["max"] * args["max"]) + args["max"] + args["c"];
+    }
+
+    return;
+}
+
+/************************
+* findMaxC
+*   This will find the max C.
+************************/
+int findMaxC(int x)
+{
+    int maxC = 0;
+
+    maxC = maxInt - (x * x) + x;
+
+    return maxC;
+}
+
+/*************************
+* findBestXAndC
+*   This will go throug all
+*       the x ranges and c.
+*       to find the best probability.
+*       of getting a prime.
+*************************/
+void findBestXAndC()
+{
+    cout << "\nNow finding the best x range and c...\n";
+
+    // Make some variables!
+    vector<float> bestProb;
+    bestProb.push_back(0.0); // bestProb[0] == min of X.
+    bestProb.push_back(0.0); // bestProb[1] == max of X.
+    bestProb.push_back(0.0); // bestProb[2] == best c.
+    bestProb.push_back(0.0); // bestProb[3] == probability.
+    int minX = -46341;
+    int maxX = -36341;
+    int maxC = findMaxC(abs(minX));
+
+#ifdef DEBUG
+    cout << "maxC = " << maxC << endl;
+#endif
+
+    float count;
+    float totalPoss = 10000;
+
+    // For loop for c
+    for (int c = 1; c <= maxC; ++c)
+    {
+        count = 0;
+
+        // Now to run through all of x!
+        for (int i = minX; i <= maxX; ++i)
+        {
+            // Now use Euler's Polynomial!
+            //  num =     x^2 + x + C
+            int num = abs((i * i) + i + c);
+
+            // Now test for it's primality!
+            if (primesArray[num] == 0)
+            {
+                count++;
+            }
+        }
+
+        float prob = (count / 10000) * 100;
+
+        // Now check the vector!
+        if (bestProb.isEmpty() || prob > bestProb[3])
+        {
+            // Insert the best x and c!
+            bestProb[0] = minX;
+            bestProb[1] = maxX;
+            bestProb[2] = c;
+            bestProb[3] = prob;
+        }
+    }
+
+    return;
+}
+
+/*************************
 * main
 *   Driver function.
 *************************/
 int main(int argc, const char *argv[])
 {
-    int max = 0;
-    int min = 0;
-    int c   = 0;
+    // Set up map!
+    map<string, int> args;
+    args["help"] = 0;
+    args["min"]  = 0;
+    args["max"]  = 0;
+    args["find"] = 1;
+    args["c"]    = 0;
 
     try
     {
-        // Grab the command line arguments!
-        readCommandLine(min, max, c, argc, argv);
+        // Parse arguments
+        // parseCommandLine(args, argc, argv);
 
-        // Allocate memory
-        sizeOfPrimes = (max * max) + max + c;
+        // // Grab the command line arguments!
+        // readCommandLine(args);
+
+        // Grab the right size!
+        grabSize(args);
+
+        // Now allocate it!
         primesArray = new bool[sizeOfPrimes];
 
         // Now find all the primes!
         seiveEratosthenes();
 
         // Now test Euler's Polynomial
-        testEulersPolynomial(min, max, c);
+        // if (args["find"] == 1)
+            findBestXAndC();
+        // else
+        //     testEulersPolynomial(args);
 
         // Delete the array
         delete [] primesArray;
