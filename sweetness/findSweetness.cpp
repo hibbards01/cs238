@@ -309,6 +309,34 @@ int findMaxC(int x)
 }
 
 /*************************
+* findStandardDev
+*   This will find the standard deviation.
+*************************/
+float findStandardDev(vector<float> values)
+{
+    float mean = 0.0;
+    float variance = 0.0;
+
+    // Find the mean!
+    for (int i = 0; i < values.size(); ++i)
+    {
+        mean += values[i];
+    }
+
+    mean /= values.size();
+
+    // Now find the variance!
+    for (int i = 0; i < values.size(); ++i)
+    {
+        variance += (values[i] - mean) * (values[i] - mean);
+    }
+
+    variance /= (values.size() - 1);
+
+    return sqrt(variance);
+}
+
+/*************************
 * findBestXAndC
 *   This will go throug all
 *       the x ranges and c.
@@ -319,78 +347,74 @@ void findBestXAndC()
 {
     cout << "\nNow finding the best x range and c...\n";
 
-    // Make some variables!
-    vector<float> bestProb;
-    bestProb.push_back(0.0); // bestProb[0] == min of X.
-    bestProb.push_back(0.0); // bestProb[1] == max of X.
-    bestProb.push_back(0.0); // bestProb[2] == best c.
-    bestProb.push_back(0.0); // bestProb[3] == probability.
-    int minX = -46341;
-    int maxX = -36341;
-    int maxC = findMaxC(abs(minX));
+    // Create the variables
+    int min = -10000;
+    int max = 0;
+    int maxC = findMaxC(abs(min));
+    float bestC[4];
+    bestC[0] = 0.0;       // Best probability
+    bestC[1] = 0.0;       // Best c
+    bestC[2] = 0.0;       // Standard deviation
+    bestC[3] = 0.0;       // Probability / Stanadard deviation
+    vector<float> values; // save all the values for to compute standard deviation
 
-#ifdef DEBUG
-    cout << "maxC = " << maxC << endl;
-#endif
-
-    float count;
-    float totalPoss = 10000;
-
-    // One more while loop to go through all the ranges!
-    while (maxX < 0)
+    // Loop through all the possible c values.
+    for (int c = 1; c < maxC; ++c)
     {
-        // For loop for c
-        for (int c = 1; c <= maxC; ++c)
-        {
-            count = 0;
+        float count = 0;
 
-            // Now to run through all of x!
-            for (int i = minX; i <= maxX; ++i)
+        if (c % 2) // We only want odds!
+        {
+            // Now loop through all the x values!
+            for (int x = min; x < max; ++x)
             {
                 // Now use Euler's Polynomial!
                 //  num =     x^2 + x + C
-                int num = abs((i * i) + i + c);
+                int num = abs((x * x) + x + c);
 
                 // Now test for it's primality!
                 if (primesArray[num] == 0)
                 {
                     count++;
+                    values.push_back(num);
                 }
             }
 
+            // Now grab the probability!
             float prob = (count / 10000) * 100;
 
-            // Now check the vector!
-            if (prob > bestProb[3])
+            if (prob > 50.0)
             {
-                // Insert the best x and c!
-                bestProb[0] = minX;
-                bestProb[1] = maxX;
-                bestProb[2] = c;
-                bestProb[3] = prob;
+                // Find the standard deviation and PROB / Standard deviation
+                float standDev = findStandardDev(values);
+                float newProb = prob / standDev;
+
+                // Now check that probability with the other prob.
+                if (newProb > bestC[3])
+                {
+                    // Insert everything!
+                    bestC[0] = prob;
+                    bestC[1] = c;
+                    bestC[2] = standDev;
+                    bestC[3] = newProb;
+                }
             }
-        }
 
-#ifdef DEBUG
-        if (minX == -40000 || minX == -30000 || minX == -20000 ||
-            minX == -10000 || minX == -5000 || minX == -2500 ||
-            minX == -1000 || minX == -500 || minX == -100)
-        {
-            cout << "Range now is " << minX << " < x < " << maxX << endl;
+            values.clear(); // Always clear it!
         }
-#endif
-
-        // Now increment the range and get max c!
-        maxX++;
-        maxC = findMaxC(abs(++minX));
     }
 
-    cout << "\n**************************************\n"
-         << "************Best Probability**********\n"
-         << "**************************************\n\n"
-         << "With given variables: " << bestProb[0] << " <= x <= " << bestProb[1]
-         << " and C = " << bestProb[2] << endl
-         << "Your probability of getting a prime is " << bestProb[3] << "%\n\n";
+    cout << "\nBest c found with -10000 < x < 0 was: " << bestC[1] << endl
+         << "Probability was: " << bestC[0] << "%\n"
+         << "Standard Deviation was: " << best[2] << endl
+         << "Probability / Standard Deviation is: " << bestC[3] << "%\n\n";
+
+    // cout << "\n**************************************\n"
+    //      << "************Best Probability**********\n"
+    //      << "**************************************\n\n"
+    //      << "With given variables: " << bestProb[0] << " <= x <= " << bestProb[1]
+    //      << " and C = " << bestProb[2] << endl
+    //      << "Your probability of getting a prime is " << bestProb[3] << "%\n\n";
 
     return;
 }
