@@ -299,15 +299,9 @@ void grabSize(map<string, int> & args)
 * findMaxC
 *   This will find the max C.
 ************************/
-int findMaxC(int max, int min)
+int findMaxC(int x)
 {
     int maxC = 0;
-    int x = 0;
-
-    if (max > min)
-        x = max;
-    else
-        x = min;
 
     maxC = maxInt - (x * x) + x;
 
@@ -333,7 +327,7 @@ void findBestXAndC()
     bestProb.push_back(0.0); // bestProb[3] == probability.
     int minX = -46341;
     int maxX = -36341;
-    int maxC = findMaxC(abs(maxX), abs(minX));
+    int maxC = findMaxC(abs(minX));
 
 #ifdef DEBUG
     cout << "maxC = " << maxC << endl;
@@ -343,7 +337,7 @@ void findBestXAndC()
     float totalPoss = 10000;
 
     // One more while loop to go through all the ranges!
-    while (minX <= 1)
+    while (maxX < 0)
     {
         // For loop for c
         for (int c = 1; c <= maxC; ++c)
@@ -377,8 +371,18 @@ void findBestXAndC()
             }
         }
 
+#ifdef DEBUG
+        if (minX == -40000 || minX == -30000 || minX == -20000 ||
+            minX == -10000 || minX == -5000 || minX == -2500 ||
+            minX == -1000 || minX == -500 || minX == -100)
+        {
+            cout << "Range now is " << minX << " < x < " << maxX << endl;
+        }
+#endif
+
         // Now increment the range and get max c!
-        maxC = findMaxC(abs(++maxX), abs(++minX));
+        maxX++;
+        maxC = findMaxC(abs(++minX));
     }
 
     cout << "\n**************************************\n"
