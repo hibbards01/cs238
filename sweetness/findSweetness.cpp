@@ -350,7 +350,8 @@ void findBestXAndC()
     // Create the variables
     int min = -10000;
     int max = 0;
-    int maxC = findMaxC(abs(min));
+    int maxC = 100000000;
+    int minC = -99999999;
     float bestC[4];
     bestC[0] = 0.0;       // Best probability
     bestC[1] = 0.0;       // Best c
@@ -359,54 +360,51 @@ void findBestXAndC()
     vector<float> values; // save all the values for to compute standard deviation
 
     // Loop through all the possible c values.
-    for (int c = 1; c < maxC; ++c)
+    for (int c = minC; c < maxC; c += 2)
     {
         float count = 0;
 
-        if (c % 2) // We only want odds!
+        // Now loop through all the x values!
+        for (int x = min; x < max; ++x)
         {
-            // Now loop through all the x values!
-            for (int x = min; x < max; ++x)
+            // Now use Euler's Polynomial!
+            //  num =     x^2 + x + C
+            int num = abs((x * x) + x + c);
+
+            // Now test for it's primality!
+            if (primesArray[num] == 0)
             {
-                // Now use Euler's Polynomial!
-                //  num =     x^2 + x + C
-                int num = abs((x * x) + x + c);
-
-                // Now test for it's primality!
-                if (primesArray[num] == 0)
-                {
-                    count++;
-                    values.push_back(num);
-                }
+                count++;
+                values.push_back(num);
             }
-
-            // Now grab the probability!
-            float prob = (count / 10000) * 100;
-
-            if (prob > 50.0)
-            {
-                // Find the standard deviation and PROB / Standard deviation
-                float standDev = findStandardDev(values);
-                float newProb = prob / standDev;
-
-                // Now check that probability with the other prob.
-                if (newProb > bestC[3])
-                {
-                    // Insert everything!
-                    bestC[0] = prob;
-                    bestC[1] = c;
-                    bestC[2] = standDev;
-                    bestC[3] = newProb;
-                }
-            }
-
-            values.clear(); // Always clear it!
         }
+
+        // Now grab the probability!
+        float prob = (count / 10000) * 100;
+
+        if (prob > 50.0)
+        {
+            // Find the standard deviation and PROB / Standard deviation
+            float standDev = findStandardDev(values);
+            float newProb = prob / standDev;
+
+            // Now check that probability with the other prob.
+            if (newProb > bestC[3])
+            {
+                // Insert everything!
+                bestC[0] = prob;
+                bestC[1] = c;
+                bestC[2] = standDev;
+                bestC[3] = newProb;
+            }
+        }
+
+        values.clear(); // Always clear it!
     }
 
     cout << "\nBest c found with -10000 < x < 0 was: " << bestC[1] << endl
          << "Probability was: " << bestC[0] << "%\n"
-         << "Standard Deviation was: " << best[2] << endl
+         << "Standard Deviation was: " << bestC[2] << endl
          << "Probability / Standard Deviation is: " << bestC[3] << "%\n\n";
 
     // cout << "\n**************************************\n"
