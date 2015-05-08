@@ -341,7 +341,7 @@ int getMaxX(int c)
 *       if it is greater than
 *       the values prob.
 ****************************/
-bool saveEverything(float prob, int c, int bestC, double saveProb[], vector<int> values)
+bool saveEverything(float prob, int c, int &bestC, double saveProb[], vector<int> values)
 {
     // Find the standard deviation and PROB / Standard deviation
     double standDev = findStandardDev(values);
@@ -367,7 +367,7 @@ bool saveEverything(float prob, int c, int bestC, double saveProb[], vector<int>
 *   This will find the better
 *       x range.
 ****************************/
-void findXRange(double prob[], int c)
+void findXRange(double saveProb[], int c)
 {
     cout << "\nNow seeing if there is a better x range...\n";
 
@@ -377,11 +377,7 @@ void findXRange(double prob[], int c)
     // Get Min and Max of x
     int min = getMaxX(c);
     int max = min + 10000;
-    // Save the Probability
-    double saveProb[3];
-    saveProb[0] = 0.0;       // Best probability
-    saveProb[1] = maxInt;    // Standard deviation
-    saveProb[2] = 0.0;       // Probability / Stanadard deviation
+    // int deleteMe = 0;
     // Save best x range!
     int saveX[2];
     saveX[0] = -10000; // Min
@@ -390,6 +386,7 @@ void findXRange(double prob[], int c)
     // Now loop through all the ranges!
     while(max < 0)
     {
+        count = 0;
         // Now loop through all the x values!
         for (int x = min; x < max; ++x)
         {
