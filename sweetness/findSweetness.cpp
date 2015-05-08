@@ -43,6 +43,7 @@ void displayLearnedAndDirections() throw (string)
     string message = "How to use this program type: 'a.out --help'\n\n";
 
     throw(message);
+
     return;
 }
 
@@ -85,9 +86,17 @@ void parseCommandLine(map<string, int> & args, int argc, const char **argv) thro
 
             i++;
         }
-        else if (argv[i]== string("-f") || argv[i] == string("--find"))
+        else if (argv[i] == string("-f") || argv[i] == string("--find"))
         {
-            args["find"] = 1;
+            if ((i + 1) < argc)
+            {
+                string c = argv[i + 1];
+
+                if (c.find_first_not_of("0123456789") != std::string::npos)
+                    args["find"] = atoi(argv[++i]);
+            }
+            else
+                args["find"] = 0;
         }
         else
         {
@@ -123,9 +132,6 @@ void readCommandLine(map<string, int> & args) throw (string)
     else if (((max * max) + max + c) < 0 ||
             ((min * min) + min + c) < 0)
     {
-        cout << ((max * max) + max + c) << endl
-             << ((min * min) + min + c) << endl;
-
         int maxC = 0;
 
         if (max > abs(min))
@@ -156,7 +162,9 @@ void readCommandLine(map<string, int> & args) throw (string)
               "\t-mn, --min\t Minimum range of x. MINIMUM x is -46341.\n" +
               "\t-mx, --max\t Maximum range of x. MAXIMUM x is 46341.\n" +
               "\t-c\t\t Value for C. Maximum c is computed by given x.\n" +
-              "\t-f   --find\t This will find the best x and c value.\n\n";
+              "\t-f   --find\t This will find the best c value and x. If you\n" +
+              "\t\t\t give a c value after -f then it will find the\n" +
+              "\t\t\t best range based off your c value.\n\n";
     }
 
     // Throw the message if there is one.
@@ -166,7 +174,8 @@ void readCommandLine(map<string, int> & args) throw (string)
     }
 
     // Check these to see which functions to do.
-    if (max == 0 && min == 0 && c == 0 && args["find"] != 1)
+    if (max == 0 && min == 0 && c == 0 &&
+        args["find"] == -1)
     {
         displayLearnedAndDirections();
     }
@@ -268,33 +277,6 @@ void testEulersPolynomial(map<string, int> & args)
          << (count / totalPoss) * 100 << "%\n\n";
 }
 
-/*************************
-* grabSize
-*   Get the right size!
-*************************/
-void grabSize(map<string, int> & args)
-{
-    // Check to see if we need the max int.
-    if (args["find"] == 1)
-    {
-        sizeOfPrimes = maxInt;
-        return;
-    }
-
-    if (abs(args["min"]) > abs(args["max"]))
-    {
-        int min = args["min"];
-        int c = args["c"];
-        sizeOfPrimes = (min * min) + min + c;
-    }
-    else
-    {
-        sizeOfPrimes = (args["max"] * args["max"]) + args["max"] + args["c"];
-    }
-
-    return;
-}
-
 /************************
 * findMaxC
 *   This will find the max C.
@@ -312,10 +294,11 @@ int findMaxC(int x)
 * findStandardDev
 *   This will find the standard deviation.
 *************************/
-float findStandardDev(vector<float> values)
+double findStandardDev(vector<int> values)
 {
-    float mean = 0.0;
-    float variance = 0.0;
+    cout.setf(ios::fixed);
+    double mean = 0.0;
+    double variance = 0.0;
 
     // Find the mean!
     for (int i = 0; i < values.size(); ++i)
@@ -336,6 +319,121 @@ float findStandardDev(vector<float> values)
     return sqrt(variance);
 }
 
+/****************************
+* getMaxX
+*   This will grab the max x
+*       based off of c.`
+****************************/
+int getMaxX(int c)
+{
+    double max = (maxInt - abs(c));
+    double squ = sqrt(1 + (4 * max));
+
+    // Now do the quadratic forumla
+    max = -1 - squ;
+
+    return max / 2;
+}
+
+/****************************
+* saveEverything
+*   This is save everything
+*       if it is greater than
+*       the values prob.
+****************************/
+bool saveEverything(float prob, int c, int bestC, double saveProb[], vector<int> values)
+{
+    // Find the standard deviation and PROB / Standard deviation
+    double standDev = findStandardDev(values);
+    double newProb = prob / standDev;
+
+    // Now check that probability with the other prob.
+    if (prob > saveProb[0] && standDev < saveProb[1])
+    {
+        // Insert everything!
+        saveProb[0] = prob;
+        saveProb[1] = standDev;
+        saveProb[2] = newProb;
+        bestC = c;
+
+        return true;
+    }
+
+    return false;
+}
+
+/****************************
+* findXRange
+*   This will find the better
+*       x range.
+****************************/
+void findXRange(double prob[], int c)
+{
+    cout << "\nNow seeing if there is a better x range...\n";
+
+    // Now find a better range that will give a higher probability!
+    float count = 0;
+    vector<int> values;      // save all the values for to compute standard deviation
+    // Get Min and Max of x
+    int min = getMaxX(c);
+    int max = min + 10000;
+    // Save the Probability
+    double saveProb[3];
+    saveProb[0] = 0.0;       // Best probability
+    saveProb[1] = maxInt;    // Standard deviation
+    saveProb[2] = 0.0;       // Probability / Stanadard deviation
+    // Save best x range!
+    int saveX[2];
+    saveX[0] = -10000; // Min
+    saveX[1] = 0;      // Max
+
+    // Now loop through all the ranges!
+    while(max < 0)
+    {
+        // Now loop through all the x values!
+        for (int x = min; x < max; ++x)
+        {
+            // Now use Euler's Polynomial!
+            //  num =     x^2 + x + C
+            int num = abs((x * x) + x + c);
+
+            // Now test for it's primality!
+            if (primesArray[num] == 0)
+            {
+                count++;
+                values.push_back(num);
+            }
+        }
+
+        // Now grab the probability!
+        float prob = (count / 10000.00) * 100.00;
+
+        if (prob > 50.0)
+        {
+            if (saveEverything(prob, c, c, saveProb, values))
+            {
+                // Save x if it is better!
+                saveX[0] = min;
+                saveX[1] = max;
+            }
+        }
+
+        values.clear(); // Always clear it!
+
+        // Now increment the range
+        max++;
+        min++;
+    }
+
+    cout << "\nHere is the best x range: " << saveX[0] << " < x < " << saveX[1] << endl
+         << "With given c: " << c << endl
+         << "\nProbability was: " << saveProb[0] << "%\n"
+         << "Standard Deviation was: " << saveProb[1] << endl
+         << "Probability / Standard Deviation is: " << saveProb[2] << "%\n\n";
+
+    return;
+}
+
 /*************************
 * findBestXAndC
 *   This will go throug all
@@ -343,21 +441,31 @@ float findStandardDev(vector<float> values)
 *       to find the best probability.
 *       of getting a prime.
 *************************/
-void findBestXAndC()
+void findBestXAndC(map<string, int> args)
 {
-    cout << "\nNow finding the best x range and c...\n";
+    int maxC = 100000000;
+    int minC = -99999999;
+
+    if (args["find"] == 0)
+        cout << "\nNow finding the best c...\n";
+    else
+    {
+        cout << "\nComputing probability based off of c with x being:\n"
+             << "\t-10000 < x < 0\n";
+
+        minC = args["find"];
+        maxC = minC + 1;
+    }
 
     // Create the variables
     int min = -10000;
     int max = 0;
-    int maxC = 100000000;
-    int minC = -99999999;
-    float bestC[4];
-    bestC[0] = 0.0;       // Best probability
-    bestC[1] = 0.0;       // Best c
-    bestC[2] = 0.0;       // Standard deviation
-    bestC[3] = 0.0;       // Probability / Stanadard deviation
-    vector<float> values; // save all the values for to compute standard deviation
+    double saveProb[3];
+    saveProb[0] = 0.0;       // Best probability
+    saveProb[1] = maxInt;    // Standard deviation
+    saveProb[2] = 0.0;       // Probability / Stanadard deviation
+    int bestC = 0;
+    vector<int> values; // save all the values for to compute standard deviation
 
     // Loop through all the possible c values.
     for (int c = minC; c < maxC; c += 2)
@@ -380,39 +488,29 @@ void findBestXAndC()
         }
 
         // Now grab the probability!
-        float prob = (count / 10000) * 100;
+        float prob = (count / 10000.00) * 100.00;
 
         if (prob > 50.0)
         {
-            // Find the standard deviation and PROB / Standard deviation
-            float standDev = findStandardDev(values);
-            float newProb = prob / standDev;
-
-            // Now check that probability with the other prob.
-            if (newProb > bestC[3])
-            {
-                // Insert everything!
-                bestC[0] = prob;
-                bestC[1] = c;
-                bestC[2] = standDev;
-                bestC[3] = newProb;
-            }
+            saveEverything(prob, c, bestC, saveProb, values);
         }
 
         values.clear(); // Always clear it!
     }
 
-    cout << "\nBest c found with -10000 < x < 0 was: " << bestC[1] << endl
-         << "Probability was: " << bestC[0] << "%\n"
-         << "Standard Deviation was: " << bestC[2] << endl
-         << "Probability / Standard Deviation is: " << bestC[3] << "%\n\n";
+    if (args["find"] == 0)
+    {
+        cout << "\nBest c found with -10000 < x < 0 was: " << bestC << endl;
+    }
+    else
+        cout << "\nWith given c: " << bestC << " and x being: -10000 < x < 0\n";
 
-    // cout << "\n**************************************\n"
-    //      << "************Best Probability**********\n"
-    //      << "**************************************\n\n"
-    //      << "With given variables: " << bestProb[0] << " <= x <= " << bestProb[1]
-    //      << " and C = " << bestProb[2] << endl
-    //      << "Your probability of getting a prime is " << bestProb[3] << "%\n\n";
+    cout << "Probability was: " << saveProb[0] << "%\n"
+         << "Standard Deviation was: " << saveProb[1] << endl
+         << "Probability / Standard Deviation is: " << saveProb[2] << "%\n\n";
+
+    // Now find a better range!
+    findXRange(saveProb, bestC);
 
     return;
 }
@@ -425,11 +523,11 @@ int main(int argc, const char *argv[])
 {
     // Set up map!
     map<string, int> args;
-    args["help"] = 0;
-    args["min"]  = 0;
-    args["max"]  = 0;
-    args["find"] = 0;
-    args["c"]    = 0;
+    args["help"]  = 0;
+    args["min"]   = 0;
+    args["max"]   = 0;
+    args["find"]  = -1;
+    args["c"]     = 0;
 
     try
     {
@@ -439,18 +537,16 @@ int main(int argc, const char *argv[])
         // Grab the command line arguments!
         readCommandLine(args);
 
-        // Grab the right size!
-        grabSize(args);
-
         // Now allocate it!
+        sizeOfPrimes = maxInt;
         primesArray = new bool[sizeOfPrimes];
 
         // Now find all the primes!
         seiveEratosthenes();
 
         // Now test Euler's Polynomial
-        if (args["find"] == 1)
-           findBestXAndC();
+        if (args["find"] != -1)
+            findBestXAndC(args);
         else
             testEulersPolynomial(args);
 
